@@ -3,37 +3,55 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useColorScheme } from '@/presentation/theme/hooks/useColorScheme';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useThemeColor } from '@/presentation/theme/hooks/useThemeColor';
+import { QueryClient, QueryClientProvider, queryOptions, useQueryClient } from '@tanstack/react-query';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    }
+  }
+});
 
 export default function RootLayout() {
+  const [isReady, setIsReady] = useState(false);
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    KanitRegular: require('../assets/fonts/Kanit-Regular.ttf'),
+    KanitBold: require('../assets/fonts/Kanit-Bold.ttf'),
+    KanitThin: require('../assets/fonts/Kanit-Thin.ttf'),
   });
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().finally(() => setIsReady(true));
     }
   }, [loaded]);
 
-  if (!loaded) {
+  if (!isReady) {
     return null;
   }
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: 'red' }}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
